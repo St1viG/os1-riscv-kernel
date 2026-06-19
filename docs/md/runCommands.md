@@ -1,6 +1,6 @@
 # OS1 RISC-V — Docker Cheatsheet
 
-Container = disposable toolchain. Your code lives in `os1/` on the Mac and is mounted in.
+Container = disposable toolchain. Code lives in `os1/` on the Mac and is mounted in.
 Nothing in `os1/` is ever lost by exiting a container.
 
 ## One-time setup
@@ -50,7 +50,7 @@ docker ps                          # list running containers
 docker images                      # list images
 ```
 
-## .gitignore (your real safety net, not Docker)
+## .gitignore
 
 ```
 build/
