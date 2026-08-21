@@ -1,5 +1,6 @@
 
-#include "../h/syscall_c.h"
+#include "../h/syscall_c.hpp"
+#include "Threads_C_API_test.hpp"
 
 #include "printing.hpp"
 
@@ -32,9 +33,6 @@ static void workerBodyB(void* arg) {
         for (uint64 j = 0; j < 10000; j++) {
             for (uint64 k = 0; k < 30000; k++) { /* busy wait */ }
             thread_dispatch();
-        }
-        if (i == 10) {
-            asm volatile("csrr t6, sepc");
         }
     }
     printString("B finished!\n");
@@ -92,7 +90,7 @@ static void workerBodyD(void* arg) {
 }
 
 
-void System_Mode_test() {
+void Threads_C_API_test() {
     thread_t threads[4];
     thread_create(&threads[0], workerBodyA, nullptr);
     printString("ThreadA created\n");

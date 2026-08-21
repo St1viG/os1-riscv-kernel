@@ -1,0 +1,31 @@
+# Build output
+build/
+kernel
+kernel.asm
+*.o
+*.d
+*.lst
+.gdbinit
+
+# CLion / JetBrains
+.idea/
+cmake-build-*/
+
+# VSCode
+.vscode/
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile.cmake
+compile_commands.json
+
+# macOS
+.DS_Store
+
+# unsignificant files
+docs/project_example/
+
+# clangd index
+.cache/
