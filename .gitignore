@@ -25,10 +25,10 @@ compile_commands.json
 .DS_Store
 
 # unsignificant files
-docs/project_example/
+docs/project_example
 
 # clangd index
 .cache/
 
 # friend's reference project -- not part of this submission
-docs/cira_example/
+docs/cira_example
