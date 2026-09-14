@@ -29,3 +29,6 @@ docs/project_example/
 
 # clangd index
 .cache/
+
+# friend's reference project -- not part of this submission
+docs/cira_example/
