@@ -26,7 +26,7 @@ int sem_signal (sem_t id);                                              // 0x24
 int sem_wait_n (sem_t id, unsigned n);                                  // 0x25
 int sem_signal_n (sem_t id, unsigned n);                                // 0x26
 
-int time_sleep (time_t);                                                // 0x31
+int time_sleep (time_t t);                                                // 0x31
 
 const int EOF = -1;
 
