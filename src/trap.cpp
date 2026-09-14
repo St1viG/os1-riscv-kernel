@@ -45,6 +45,10 @@ extern "C" void handleTrap(uint64 *frame){
                 frame[REG_A0] = (uint64) - 1;
                 break;
         }
+    }else if(scause == Riscv::INT_SOFTWARE){
+        Riscv::mc_sip(Riscv::SI_SSI);
+    }else if(scause == Riscv::INT_EXTERNAL){
+        console_handler();
     }else{
         kprintString("unexpected trap, scause = ");
         kprintHex(scause);

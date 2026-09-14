@@ -29,6 +29,8 @@ private:
     thread_t myHandle;
     void (*body)(void*);
     void* arg;
+
+    static void wrapper (void*);
 };
 
 class Semaphore {
@@ -50,6 +52,8 @@ public:
 protected:
     PeriodicThread (time_t period);
 
+    void run () override;
+    
     virtual void periodicActivation () {}
 
 private:
