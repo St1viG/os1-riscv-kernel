@@ -68,6 +68,10 @@ int  sem_signal_n(sem_t id, unsigned n)     { return (int)syscall3(0x26, (uint64
 
 int  time_sleep(time_t t)                   { return (int)syscall2(0x31, t); }
 
-// TEMP
-char getc()                                 { return __getc(); }
-void putc(char c)                           { __putc(c); }
+// Real syscalls, not the Phase 2 forwarders: user code runs in U-mode now, and
+// console.lib reads sstatus internally, so calling it directly from a user
+// thread traps with an illegal instruction. The kernel side still forwards to
+// console.lib -- Phase 6 replaces that with buffers and interrupt-driven I/O
+// without touching this layer.
+char getc()                                 { return (char)syscall1(0x41); }
+void putc(char c)                           { syscall2(0x42, (uint64)c); }

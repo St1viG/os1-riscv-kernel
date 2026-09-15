@@ -41,6 +41,14 @@ extern "C" void handleTrap(uint64 *frame){
                 frame[REG_A0] = (uint64)r;
                 break;
             }
+            // Phase 6 replaces these two bodies with real buffering; the ABI and
+            // the C API above it stay exactly as they are.
+            case 0x41:
+                frame[REG_A0] = (uint64)__getc();
+                break;
+            case 0x42:
+                __putc((char)frame[REG_A1]);
+                break;
             default:
                 frame[REG_A0] = (uint64) - 1;
                 break;
