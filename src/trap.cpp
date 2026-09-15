@@ -1,7 +1,8 @@
 #include "../h/riscv.hpp"
 #include "../h/MemoryAllocator.hpp"
 #include "../lib/console.h"
-
+#include "../h/tcb.hpp"
+#include "../h/scheduler.hpp"
 
 // Kernel-side printing. Goes straight to console.lib, never through the C API:
 // this runs inside the trap handler, where an ecall would re-enter the trap we
@@ -41,6 +42,32 @@ extern "C" void handleTrap(uint64 *frame){
                 frame[REG_A0] = (uint64)r;
                 break;
             }
+
+            case 0x11: {
+                thread_t* handle = (thread_t*)frame[REG_A1];
+                _thread::Body body = (_thread::Body)frame[REG_A2];
+                void* arg = (void*)frame[REG_A3];
+                void* stackSpace = (void*)frame[REG_A4];
+
+                void* stackBase = (char*)stackSpace - DEFAULT_STACK_SIZE;
+
+                _thread* t = _thread::createThread(body, arg, stackBase, stackSpace, true);
+                if(!t){
+                    frame[REG_A0] = (uint64) - 1;
+                    break;
+                }
+                Scheduler::put(t);
+                if(handle)
+                    *handle = t;
+                frame[REG_A0] = 0;
+                break;
+            }
+            case 0x12:
+                _thread::exit();
+                break;
+            case 0x13:
+                _thread::dispatch();
+                break;
             // Phase 6 replaces these two bodies with real buffering; the ABI and
             // the C API above it stay exactly as they are.
             case 0x41:
