@@ -43,9 +43,14 @@ void* mem_alloc(size_t size){
 int  mem_free(void* ptr)                    { return (int)syscall2(0x02, (uint64)ptr); }
 
 int thread_create(thread_t *handle, void (*start_routine)(void *), void *arg){
-    void* stack = mem_alloc(DEFAULT_STACK_SIZE * sizeof(uint64));
+    // DEFAULT_STACK_SIZE is already a byte count (hw.h declares it size_t, and
+    // 4096 == 64 * MEM_BLOCK_SIZE exactly). Scaling it by sizeof(uint64) would
+    // hand every thread 32 KiB instead of 4 KiB.
+    void* stack = mem_alloc(DEFAULT_STACK_SIZE);
     if(!stack) return -1;
-    void* stack_space = (char*)stack + DEFAULT_STACK_SIZE * sizeof(uint64);
+    // The ABI wants the top of the region: mem_alloc returns block-aligned
+    // memory, so base + DEFAULT_STACK_SIZE is 16-aligned and needs no fixup.
+    void* stack_space = (char*)stack + DEFAULT_STACK_SIZE;
     int res =  (int)syscall5(0x11, (uint64)handle, (uint64)start_routine, (uint64)arg, (uint64)stack_space);
     if (res != 0) mem_free(stack);
     return res;
