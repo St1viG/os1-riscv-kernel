@@ -87,6 +87,9 @@ extern "C" void handleTrap(uint64 *frame){
             case 0x26:
                 frame[REG_A0] = (uint64)_sem::signal((sem_t)frame[REG_A1], (unsigned)frame[REG_A2]);
                 break;
+            case 0x31:
+                frame[REG_A0] = (uint64)_thread::sleep((time_t)frame[REG_A1]);
+                break;
             // Phase 6 replaces these two bodies with real buffering; the ABI and
             // the C API above it stay exactly as they are.
             case 0x41:
@@ -100,7 +103,12 @@ extern "C" void handleTrap(uint64 *frame){
                 break;
         }
     }else if(scause == Riscv::INT_SOFTWARE){
+        // This board delivers the 10 Hz timer as a SOFTWARE interrupt, not as
+        // stimer -- INT_TIMER is never seen. Acknowledge before dispatching:
+        // sip.SSIP is a level bit, and tick() may not return to this thread
+        // for a long time.
         Riscv::mc_sip(Riscv::SI_SSI);
+        _thread::tick();
     }else if(scause == Riscv::INT_EXTERNAL){
         console_handler();
     }else{

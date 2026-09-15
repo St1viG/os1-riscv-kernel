@@ -40,6 +40,14 @@ public:
     // thread cannot free the stack it is standing on.
     static void exit();
 
+    // Called from the timer interrupt, once per tick. Ages the sleep list and
+    // the running thread's quantum, and preempts when the quantum is spent.
+    static void tick();
+
+    // Parks the running thread for `ticks` timer periods, then returns 0.
+    // ticks == 0 is a no-op rather than an infinite sleep.
+    static int sleep(time_t ticks);
+
     static _thread* running;
 
     bool isFinished() const { return finished; }
@@ -76,6 +84,9 @@ private:
     // resumed thread's stack, which is why it is safe.
     static void reap();
 
+    // Advances the sleep list by one tick and readies everything now due.
+    static void wakeSleepers();
+
     Context context;
     Body body;
     void* arg;
@@ -83,15 +94,19 @@ private:
     void* stackBase;        // exactly what mem_alloc returned; nullptr if bodiless
     bool userMode;          // false -> SPP stays 1, for kernel-internal threads
     bool finished;
-    bool blocked;           // Phase 4: parked on a semaphore
+    bool blocked;           // not runnable: parked on a semaphore (Phase 4) or
+                            // on the sleep list (Phase 5). dispatch() reads this
+                            // to decide whether `running` goes back on the ready
+                            // queue, and neither owner cares which it was.
     // Phase 4. A waiter's demand cannot live in the semaphore's counter once
     // sem_wait_n exists, because each waiter owes a different n; and its result
     // cannot live in the semaphore either, because sem_close frees the object
     // before its waiters ever run again. Both therefore live here.
     unsigned semRequest;    // units this thread is blocked waiting for
     int semResult;          // how its wait ended: 0, or a _sem::Error
-    uint64 timeSlice;       // Phase 5: quantum in timer periods
-
+    uint64 timeSlice;       // Phase 5: quantum remaining, in timer periods
+    uint64 sleepTime;       // Phase 5: ticks remaining RELATIVE TO THE PREVIOUS
+                            // node in the sleep list -- not an absolute deadline
     // Intrusive queue link. The spec asks for the chaining pointer to live in
     // the thread structure rather than in separately allocated list nodes, to
     // avoid the overhead and fragmentation of one allocation per queue push.
@@ -101,6 +116,13 @@ private:
 
     // Parked here by exit() and released by the next thread to be switched in.
     static _thread* zombie;
+
+    // Head of the delta-encoded sleep list. Each node stores only the gap to the
+    // node before it, so a tick decrements exactly one counter however many
+    // threads are asleep -- the O(1) the spec asks for. Threaded through `next`,
+    // the same link the ready and semaphore queues use: legal only because a
+    // thread is ready XOR blocked XOR sleeping, never two at once.
+    static _thread* sleepHead;
 
     friend class ThreadQueue;
     friend class _sem;

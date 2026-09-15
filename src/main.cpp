@@ -27,6 +27,14 @@ int main(){
         return -1;
     Scheduler::setIdle(idle);
 
+    // State the two interrupt sources the kernel handles. The environment
+    // already enables them -- console interrupts arrive today -- but csrs is
+    // purely additive, and naming the dependency is cheaper than rediscovering
+    // it. SI_STI is absent on purpose: this board delivers the timer as
+    // SI_SSI, a software interrupt (see trap.cpp). Safe here specifically
+    // because sstatus.SIE is still 0, so nothing is delivered until the sret
+    // two lines down -- by which time running, idle and the scheduler exist.
+    Riscv::ms_sie(Riscv::SI_SSI | Riscv::SI_SEI);
 
     Riscv::mc_sstatus(Riscv::SSTATUS_SPP);
     Riscv::ms_sstatus(Riscv::SSTATUS_SPIE);
