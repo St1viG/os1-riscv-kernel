@@ -12,8 +12,7 @@ public:
     static void setIdle(_thread* t) { idle = t;}
 
 private:
-    static _thread* head;
-    static _thread* tail;
+    static ThreadQueue ready;
     static _thread* idle;
 
     Scheduler() = delete;

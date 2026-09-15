@@ -25,9 +25,9 @@ int Thread::sleep(time_t t){ return time_sleep(t);}
 
 
 Semaphore::Semaphore(unsigned init): myHandle(nullptr){ sem_open(&myHandle, init);}
-Semaphore::~Semaphore() {sem_close(myHandle);}
-int Semaphore::wait() { return sem_wait(myHandle);}
-int Semaphore::signal() { return sem_signal(myHandle);}
+Semaphore::~Semaphore() {if(myHandle) {sem_close(myHandle); myHandle = nullptr;}}
+int Semaphore::wait() { return myHandle ? sem_wait(myHandle) : -1;}
+int Semaphore::signal() { return myHandle ? sem_signal(myHandle) : -1;}
 
 
 char Console::getc() { return ::getc();}

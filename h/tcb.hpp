@@ -84,6 +84,12 @@ private:
     bool userMode;          // false -> SPP stays 1, for kernel-internal threads
     bool finished;
     bool blocked;           // Phase 4: parked on a semaphore
+    // Phase 4. A waiter's demand cannot live in the semaphore's counter once
+    // sem_wait_n exists, because each waiter owes a different n; and its result
+    // cannot live in the semaphore either, because sem_close frees the object
+    // before its waiters ever run again. Both therefore live here.
+    unsigned semRequest;    // units this thread is blocked waiting for
+    int semResult;          // how its wait ended: 0, or a _sem::Error
     uint64 timeSlice;       // Phase 5: quantum in timer periods
 
     // Intrusive queue link. The spec asks for the chaining pointer to live in
@@ -96,10 +102,35 @@ private:
     // Parked here by exit() and released by the next thread to be switched in.
     static _thread* zombie;
 
-    friend class Scheduler;
+    friend class ThreadQueue;
+    friend class _sem;
 };
 
 using TCB = _thread;
+
+// Intrusive FIFO over _thread::next. Owns no storage, so a push allocates
+// nothing -- the spec warns explicitly against one list node per insertion.
+// Shared by the ready queue and by every semaphore's blocked queue, which is
+// sound only because the states are mutually exclusive: a thread is ready XOR
+// blocked XOR sleeping, never in two queues at once.
+class ThreadQueue {
+public:
+    // constexpr, not just an initialiser list: the kernel never runs
+    // .init_array, so a global with a *dynamic* constructor would silently keep
+    // whatever .bss holds. constexpr forces constant initialisation, which is
+    // what makes `static ThreadQueue Scheduler::ready` safe.
+    constexpr ThreadQueue(): head(nullptr), tail(nullptr) {}
+
+    void put(_thread* t);
+    _thread* get();
+
+    _thread* peek() const { return head; }
+    bool isEmpty() const { return head == nullptr; }
+
+private:
+    _thread* head;
+    _thread* tail;
+};
 
 // Placement new. Normally <new> supplies it, but a freestanding kernel has no
 // standard library -- one line is cheaper than the alternative of trusting the

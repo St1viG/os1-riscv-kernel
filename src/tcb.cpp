@@ -21,7 +21,7 @@ void _thread::operator delete(void* ptr) noexcept{
 }
 
 
-_thread::_thread(Body body, void* arg, void* stackBase, void* stackSpace, bool userMode) : context({body ? (uint64)&threadWrapper : 0, body ? (uint64)stackSpace : 0 }), body(body), arg(arg), stackBase(stackBase), userMode(userMode), finished(false), blocked(false), timeSlice(DEFAULT_TIME_SLICE), next(nullptr){}
+_thread::_thread(Body body, void* arg, void* stackBase, void* stackSpace, bool userMode) : context({body ? (uint64)&threadWrapper : 0, body ? (uint64)stackSpace : 0 }), body(body), arg(arg), stackBase(stackBase), userMode(userMode), finished(false), blocked(false), semRequest(0), semResult(0), timeSlice(DEFAULT_TIME_SLICE), next(nullptr){}
 
 
 _thread* _thread::createThread(Body body, void *arg, void *stackBase, void *stackSpace, bool userMode){
@@ -64,4 +64,27 @@ void _thread::reap(){
     if(zombie->stackBase) MemoryAllocator::getInstance().mem_free(zombie->stackBase);
     delete zombie;
     zombie = nullptr;
+}
+
+
+void ThreadQueue::put(_thread* t){
+    if(!t)
+        return;
+    t->next = nullptr;
+    if(tail)
+        tail->next = t;
+    else
+        head = t;
+    tail = t;
+}
+
+_thread* ThreadQueue::get(){
+    _thread* t = head;
+    if(!t)
+        return nullptr;
+    head = head->next;
+    if(!head)
+        tail = nullptr;
+    t->next = nullptr;
+    return t;
 }

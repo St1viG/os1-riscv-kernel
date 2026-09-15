@@ -3,6 +3,7 @@
 #include "../lib/console.h"
 #include "../h/tcb.hpp"
 #include "../h/scheduler.hpp"
+#include "../h/sem.hpp"
 
 // Kernel-side printing. Goes straight to console.lib, never through the C API:
 // this runs inside the trap handler, where an ecall would re-enter the trap we
@@ -67,6 +68,24 @@ extern "C" void handleTrap(uint64 *frame){
                 break;
             case 0x13:
                 _thread::dispatch();
+                break;
+            case 0x21:
+                frame[REG_A0] = (uint64)_sem::open((sem_t*)frame[REG_A1],(unsigned)frame[REG_A2]);
+                break;
+            case 0x22:
+                frame[REG_A0] = (uint64)_sem::close((sem_t)frame[REG_A1]);
+                break;
+            case 0x23:
+                frame[REG_A0] = (uint64)_sem::wait((sem_t)frame[REG_A1],1);
+                break;
+            case 0x24:
+                frame[REG_A0] = (uint64)_sem::signal((sem_t)frame[REG_A1],1);
+                break;
+            case 0x25:
+                frame[REG_A0] = (uint64)_sem::wait((sem_t)frame[REG_A1],(unsigned)frame[REG_A2]);
+                break;
+            case 0x26:
+                frame[REG_A0] = (uint64)_sem::signal((sem_t)frame[REG_A1], (unsigned)frame[REG_A2]);
                 break;
             // Phase 6 replaces these two bodies with real buffering; the ABI and
             // the C API above it stay exactly as they are.
