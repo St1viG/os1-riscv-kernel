@@ -23,6 +23,8 @@ public:
         SSTATUS_SPP = (1 << 8),
     };
 
+    static void popSppSpie();
+
     static uint64 r_sstatus() { uint64 v; __asm__ volatile("csrr %0, sstatus" : "=r"(v)); return v;}
     static void w_sstatus(uint64 v) { __asm__ volatile("csrw sstatus, %0" : : "r"(v));}
     static void ms_sstatus(uint64 m) { __asm__ volatile("csrs sstatus, %0" : : "r"(m));}
