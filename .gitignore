@@ -32,3 +32,6 @@ docs/project_example
 
 # friend's reference project -- not part of this submission
 docs/cira_example
+
+# lecture exercise 07 (context switch + interrupts) -- reference only
+docs/vezbe07
