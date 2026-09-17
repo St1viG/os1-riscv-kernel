@@ -1,5 +1,4 @@
 #include "../h/syscall_c.hpp"
-#include "../lib/console.h"
 
 static inline uint64 syscall1(uint64 code){
     register uint64 a0 __asm__("a0") = code;
@@ -68,10 +67,8 @@ int  sem_signal_n(sem_t id, unsigned n)     { return (int)syscall3(0x26, (uint64
 
 int  time_sleep(time_t t)                   { return (int)syscall2(0x31, t); }
 
-// Real syscalls, not the Phase 2 forwarders: user code runs in U-mode now, and
-// console.lib reads sstatus internally, so calling it directly from a user
-// thread traps with an illegal instruction. The kernel side still forwards to
-// console.lib -- Phase 6 replaces that with buffers and interrupt-driven I/O
-// without touching this layer.
+// Pure ABI, like everything above: the kernel side is now our own buffered,
+// interrupt-driven driver (_console), and this layer did not have to change to
+// follow it.
 char getc()                                 { return (char)syscall1(0x41); }
 void putc(char c)                           { syscall2(0x42, (uint64)c); }

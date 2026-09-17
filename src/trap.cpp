@@ -1,28 +1,26 @@
 #include "../h/riscv.hpp"
 #include "../h/MemoryAllocator.hpp"
-#include "../lib/console.h"
 #include "../h/tcb.hpp"
 #include "../h/scheduler.hpp"
 #include "../h/sem.hpp"
 
-// Kernel-side printing. Goes straight to console.lib, never through the C API:
-// this runs inside the trap handler, where an ecall would re-enter the trap we
-// are trying to report.
+#include "../h/console.hpp"
+
+// Kernel-side printing. Goes straight at the device, never through putc: this
+// runs inside the trap handler, where an ecall would re-enter the trap we are
+// reporting, and where the drainer thread cannot run to empty a buffer for us.
 static void kprintString(char const* s) {
-    while (*s) __putc(*s++);
+    while (*s) _console::putcSync(*s++);
 }
 
 static void kprintHex(uint64 x) {
-    __putc('0');
-    __putc('x');
+    _console::putcSync('0');
+    _console::putcSync('x');
     for (int shift = 60; shift >= 0; shift -= 4) {       // 16 nibbles, high to low
         uint64 nib = (x >> shift) & 0xF;
-        __putc((char)(nib < 10 ? '0' + nib : 'a' + nib - 10));
+        _console::putcSync((char)(nib < 10 ? '0' + nib : 'a' + nib - 10));
     }
 }
-
-
-
 
 
 extern "C" void handleTrap(uint64 *frame){
@@ -31,7 +29,7 @@ extern "C" void handleTrap(uint64 *frame){
     if(scause == Riscv::ECALL_FROM_U || scause == Riscv::ECALL_FROM_S){
         frame[FRAME_SEPC] += 4;
         uint64 code = frame[REG_A0];
-    
+
         switch(code){
             case 0x01:{
                 void* p = MemoryAllocator::getInstance().mem_alloc(frame[REG_A1]);
@@ -90,13 +88,16 @@ extern "C" void handleTrap(uint64 *frame){
             case 0x31:
                 frame[REG_A0] = (uint64)_thread::sleep((time_t)frame[REG_A1]);
                 break;
-            // Phase 6 replaces these two bodies with real buffering; the ABI and
-            // the C API above it stay exactly as they are.
             case 0x41:
-                frame[REG_A0] = (uint64)__getc();
+                frame[REG_A0] = (uint64)_console::getc();
                 break;
             case 0x42:
-                __putc((char)frame[REG_A1]);
+                _console::putc((char)frame[REG_A1]);
+                break;
+            // Kernel-internal, not one of the codes the spec prescribes: main()
+            // uses it to drain the output buffer before it stops the machine.
+            case 0x43:
+                _console::flush();
                 break;
             default:
                 frame[REG_A0] = (uint64) - 1;
@@ -110,7 +111,7 @@ extern "C" void handleTrap(uint64 *frame){
         Riscv::mc_sip(Riscv::SI_SSI);
         _thread::tick();
     }else if(scause == Riscv::INT_EXTERNAL){
-        console_handler();
+        _console::handleIrq();
     }else{
         kprintString("unexpected trap, scause = ");
         kprintHex(scause);
