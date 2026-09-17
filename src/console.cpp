@@ -52,10 +52,6 @@ bool _console::bringUp(){
 
     Scheduler::put(t);
 
-    // hw.lib's uartinit left IER at 0x03 -- receive enable AND
-    // transmit-holding-register-empty enable -- for xv6's own interrupt-driven
-    // transmitter. Ours is the polled thread above, so the transmit half is an
-    // interrupt source nothing has a use for: receive only from here on.
     *ier() = IER_RX_ONLY;
 
     drainer = t;
@@ -64,10 +60,6 @@ bool _console::bringUp(){
 
 void _console::drainBody(void*){
     for(;;){
-        // The C API on purpose, not _sem::wait: a kernel thread runs with
-        // SIE = 1 and outside any trap, so touching the scheduler's queues
-        // directly from here would race the timer interrupt. The ecall puts
-        // that work back inside a trap, where interrupts are already masked.
         if(sem_wait(outItems) != 0){
             thread_dispatch();
             continue;

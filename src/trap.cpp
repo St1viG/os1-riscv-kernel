@@ -6,9 +6,6 @@
 
 #include "../h/console.hpp"
 
-// Kernel-side printing. Goes straight at the device, never through putc: this
-// runs inside the trap handler, where an ecall would re-enter the trap we are
-// reporting, and where the drainer thread cannot run to empty a buffer for us.
 static void kprintString(char const* s) {
     while (*s) _console::putcSync(*s++);
 }
@@ -94,8 +91,7 @@ extern "C" void handleTrap(uint64 *frame){
             case 0x42:
                 _console::putc((char)frame[REG_A1]);
                 break;
-            // Kernel-internal, not one of the codes the spec prescribes: main()
-            // uses it to drain the output buffer before it stops the machine.
+            // kernel-internal: drain the output buffer before halting
             case 0x43:
                 _console::flush();
                 break;
@@ -104,10 +100,6 @@ extern "C" void handleTrap(uint64 *frame){
                 break;
         }
     }else if(scause == Riscv::INT_SOFTWARE){
-        // This board delivers the 10 Hz timer as a SOFTWARE interrupt, not as
-        // stimer -- INT_TIMER is never seen. Acknowledge before dispatching:
-        // sip.SSIP is a level bit, and tick() may not return to this thread
-        // for a long time.
         Riscv::mc_sip(Riscv::SI_SSI);
         _thread::tick();
     }else if(scause == Riscv::INT_EXTERNAL){

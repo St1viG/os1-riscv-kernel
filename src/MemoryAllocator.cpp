@@ -7,11 +7,7 @@ MemoryAllocator& MemoryAllocator::getInstance(){
     return instance;
 }
 
-// Runs once, on the first getInstance() call. Lays the whole heap out as a
-// single free segment.
 MemoryAllocator::MemoryAllocator(){
-    // Pull both ends inward to block boundaries -- hw.lib makes no alignment
-    // promise about HEAP_START_ADDR, and every segment must start aligned.
     heapStart = ((size_t)HEAP_START_ADDR + MEM_BLOCK_SIZE - 1) / MEM_BLOCK_SIZE * MEM_BLOCK_SIZE;
     heapEnd = (size_t)HEAP_END_ADDR / MEM_BLOCK_SIZE * MEM_BLOCK_SIZE;
 
@@ -49,8 +45,6 @@ void* MemoryAllocator::mem_alloc(size_t size){ // size = number of payload block
 
     size_t remaining = contender->size - need;
     if(remaining >= 2){
-        // Enough left over for a header plus at least one payload block, so split.
-        // `rest` takes over contender's exact position in the free list.
         DataBlock* rest = (DataBlock*)((char*)contender + need * MEM_BLOCK_SIZE);
         rest->size = remaining;
         rest->magic = 0;
@@ -61,8 +55,6 @@ void* MemoryAllocator::mem_alloc(size_t size){ // size = number of payload block
 
         contender->size = need;     // so mem_free returns exactly what was handed out
     }else{
-        // A one-block remainder could only ever hold a header, so hand the whole
-        // segment over rather than leaving an unusable stub in the list.
         if(contender->prev) contender->prev->next = contender->next; else freeList = contender->next;
         if(contender->next) contender->next->prev = contender->prev;
     }
@@ -80,15 +72,9 @@ int MemoryAllocator::mem_free(void* ptr){
 
     DataBlock* seg = (DataBlock*)((char*)ptr - MEM_BLOCK_SIZE);
 
-    // Ordered on purpose: everything up to the range test is arithmetic on `seg`
-    // alone, so the first dereference happens only once we know it lands inside
-    // the heap. mem_alloc hands out block-aligned payloads, so a pointer that is
-    // not block-aligned cannot have come from us.
     if((size_t)seg % MEM_BLOCK_SIZE != 0 || (size_t)seg < heapStart || (size_t)seg >= heapEnd)
         return -2;
 
-    // Free segments carry magic 0, so this rejects a double free as well as a
-    // pointer that never came from mem_alloc.
     if(seg->magic != MAGIC)
         return -2;
 
@@ -98,8 +84,6 @@ int MemoryAllocator::mem_free(void* ptr){
 
     seg->magic = 0;
 
-    // Insert into the address-sorted free list -- walk to the first segment that
-    // sits above `seg` and splice in ahead of it.
     DataBlock* prev = nullptr;
     DataBlock* next = freeList;
     while(next != nullptr && next < seg){
@@ -112,11 +96,6 @@ int MemoryAllocator::mem_free(void* ptr){
     if(prev) prev->next = seg; else freeList = seg;
     if(next) next->prev = seg;
 
-    // Adjacency is address arithmetic, not list adjacency -- two list neighbours
-    // can have an allocated segment between them. Forward first, then backward,
-    // so a segment with free neighbours on both sides collapses in one pass;
-    // merging backward first would unlink `seg` and lose the handle the forward
-    // test needs.
     if(next != nullptr && (char*)seg + seg->size * MEM_BLOCK_SIZE == (char*)next){
         seg->size += next->size;
         seg->next = next->next;

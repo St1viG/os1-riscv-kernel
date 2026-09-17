@@ -17,9 +17,6 @@ int _sem::open(sem_t* handle, unsigned init){
     if(!handle)
         return ERR_HANDLE;
 
-    // Allocate, test, then construct in place. The throwing operator new is the
-    // form the compiler may assume never returns null, so it emits no check.
-    // Same dance as _thread::createThread, same reason.
     void* raw = _sem::operator new(sizeof(_sem));
     if(!raw)
         return ERR_HANDLE;
@@ -34,12 +31,7 @@ int _sem::close(sem_t handle){
     
     handle->releaseAll();
 
-    // Volatile on purpose. A plain `handle->magic = 0` here is a dead store by
-    // the letter of the standard -- the object's lifetime ends on the next
-    // line, so nothing may legitimately read it again -- and g++ -Og duly
-    // deletes it, leaving MAGIC intact in the freed block and every stale
-    // handle passing valid(). Catching the code that reads it anyway is the
-    // whole point of the guard, so the write has to be made unremovable.
+    // volatile: the object dies on the next line, so a plain store is dropped.
     *(volatile uint64*)&handle->magic = 0;
 
     delete handle;
@@ -63,12 +55,8 @@ int _sem::wait(sem_t handle, unsigned n){
     caller->setBlocked(true);
     handle->blocked.put(caller);
 
-    // The kernel call, NOT the C API thread_dispatch(): we are already inside
-    // the trap handler, and an ecall here would nest a trap and clobber sepc.
     _thread::dispatch();
 
-    // Resumed. `handle` may be dangling -- close() frees the object and only
-    // then releases its waiters, so the result lives in our own TCB.
     return caller->semResult;
 }
 
