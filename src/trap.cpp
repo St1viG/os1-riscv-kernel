@@ -110,6 +110,7 @@ extern "C" void handleTrap(uint64 *frame){
         kprintString(" sepc = ");
         kprintHex(frame[FRAME_SEPC]);
         kprintString("\n");
-        for (;;);
+        // for (;;);
+        *(volatile uint32*)0x100000 = 0x5555; //halts the emulator;
     }
 }
