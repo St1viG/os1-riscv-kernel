@@ -2,11 +2,14 @@
 #include "../h/MemoryAllocator.hpp"
 #include "../h/riscv.hpp"
 #include "../h/scheduler.hpp"
-
+#include "../h/sem.hpp"
 
 _thread* _thread::running = nullptr;
 _thread* _thread::zombie = nullptr;
 _thread* _thread::sleepHead = nullptr;
+sem_t _thread::barrierSem = nullptr;
+int _thread::userThreads = -3;
+int _thread::blockedThreads = 0;
 
 
 void* _thread::operator new(size_t bytes){
@@ -26,6 +29,7 @@ _thread* _thread::createThread(Body body, void *arg, void *stackBase, void *stac
     void* raw = _thread::operator new(sizeof(_thread));
     if(!raw)
         return nullptr;
+    userThreads++;
     return new (raw) _thread(body,arg,stackBase,stackSpace,userMode);
 }
 
@@ -62,6 +66,7 @@ void _thread::dispatch(){
 void _thread::exit(){
     running->finished = true;
     zombie = running;
+    userThreads--;
     dispatch();
 }
 
@@ -138,4 +143,18 @@ _thread* ThreadQueue::get(){
         tail = nullptr;
     t->next = nullptr;
     return t;
+}
+
+void _thread::barrier(){
+    if(!barrierSem &&  _sem::open(&barrierSem, 0 ) != _sem::OK){
+        return;
+    }
+    blockedThreads++;
+    if(blockedThreads == userThreads){
+        int toRelease = blockedThreads;
+        blockedThreads = 0;
+        _sem::signal(barrierSem, toRelease - 1);
+    }else{
+        _sem::wait(barrierSem, 1);
+    }
 }

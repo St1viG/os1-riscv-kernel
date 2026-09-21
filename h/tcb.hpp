@@ -19,6 +19,13 @@ public:
 
     static void dispatch();
 
+    static sem_t barrierSem;
+
+    static void barrier();
+    static void releaseBarrier();
+    static int userThreads;
+    static int blockedThreads;
+
     static void exit();
 
     static void tick();

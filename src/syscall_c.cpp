@@ -52,6 +52,7 @@ int thread_create(thread_t *handle, void (*start_routine)(void *), void *arg){
 
 int  thread_exit()                          { return (int)syscall1(0x12); }
 void thread_dispatch()                      { syscall1(0x13); }
+void thread_barrier() { syscall1(0x14); }
 
 int  sem_open(sem_t* handle, unsigned init) { return (int)syscall3(0x21, (uint64)handle, init); }
 int  sem_close(sem_t handle)                { return (int)syscall2(0x22, (uint64)handle); }

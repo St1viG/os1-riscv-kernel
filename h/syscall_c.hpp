@@ -16,6 +16,9 @@ int thread_create (thread_t* handle,
 int thread_exit ();                                                     // 0x12
 void thread_dispatch ();                                                // 0x13
 
+void thread_barrier();
+
+
 class _sem;
 typedef _sem* sem_t;
 

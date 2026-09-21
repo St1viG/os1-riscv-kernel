@@ -43,3 +43,8 @@ void PeriodicThread::run() {
         if (period) Thread::sleep(period);
     }
 }
+
+
+void Thread::barrier(){
+    ::thread_barrier();
+}
