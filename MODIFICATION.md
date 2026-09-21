@@ -33,4 +33,21 @@ matricu. Glavna nit treba da ispiše konačni histogram kada sve niti završe ob
 
 ## Implementation
 
-_TBD — filled in once the modification is implemented._
+Rešenje je u celosti korisnički program — `test/Modification_test.cpp`, uvezan u
+`test/userMain.cpp` kao TEST 8. Nijedan sistemski poziv nije dodavan.
+
+* `M` i `N` se čitaju cifru po cifru preko `getc()` dok se ne naiđe na `'\n'`, pa mogu imati
+  proizvoljan broj cifara. Prekidna rutina konzole pretvara `'\r'` u `'\n'`, tako da je
+  dovoljno proveravati samo `'\n'`.
+* Matrica se alocira dinamički — `new int*[M]`, pa `new int[N]` po vrsti. Brojač je kastovan
+  na `unsigned` jer bi za signed brojač `g++` ubacio proveru koja zove
+  `__cxa_throw_bad_array_new_length`, a tog simbola nema u `-nostdlib` okruženju.
+* Svaka od `M` niti (`HistThread`) računa lokalni histogram za svoju vrstu, pa ga pod
+  semaforom `histMutex` spaja u deljeni `Hist[10]`. Semafor je neophodan jer je
+  `Hist[i] += localHist[i]` čitaj-izmeni-upiši sekvenca, a preotimanje je uključeno.
+* Nakon svakih 10 obrađenih elemenata nit se uspavljuje na 5 perioda tajmera
+  (`Thread::sleep(5)`) — varijanta za 30 poena.
+* Glavna nit čeka `M` signala na semaforu `finished` i tek onda ispisuje histogram, umesto
+  aktivnog čekanja na brojaču završenih niti.
+
+Provereno za 4×5, 40×40 i 100×20 — suma histograma je u svim slučajevima tačno `M*N`.

@@ -27,11 +27,12 @@
 // TEST 6 (zadatak 4. CPP API i asinhrona promena konteksta)
 #include "../test/ConsumerProducer_CPP_API_test.hpp"
 #include "System_Mode_test.hpp"
+#include "Modification_test.hpp"
 
 #endif
 
 void userMain() {
-    printString("Unesite broj testa? [1-7]\n");
+    printString("Unesite broj testa? [1-8]\n");
     int test = getc() - '0';
     getc(); // Enter posle broja
 
@@ -99,6 +100,10 @@ void userMain() {
             printString("Test se nije uspesno zavrsio\n");
             printString("TEST 7 (zadatak 2., testiranje da li se korisnicki kod izvrsava u korisnickom rezimu)\n");
 #endif
+            break;
+        case 8:
+            Histogram_test();
+            printString("Test 8 gotov");
             break;
         default:
             printString("Niste uneli odgovarajuci broj za test\n");
