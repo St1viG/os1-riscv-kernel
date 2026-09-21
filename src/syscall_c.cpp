@@ -64,3 +64,12 @@ int  time_sleep(time_t t)                   { return (int)syscall2(0x31, t); }
 
 char getc()                                 { return (char)syscall1(0x41); }
 void putc(char c)                           { syscall2(0x42, (uint64)c); }
+
+
+void send(thread_t handle, char* message){
+    syscall3(0x14, (uint64)handle, (uint64)message);
+}
+
+char* receive(){
+    return (char*)syscall1(0x15);
+}

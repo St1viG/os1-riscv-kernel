@@ -19,7 +19,7 @@ void _thread::operator delete(void* ptr) noexcept{
 }
 
 
-_thread::_thread(Body body, void* arg, void* stackBase, void* stackSpace, bool userMode) : context({body ? (uint64)&threadWrapper : 0, body ? (uint64)stackSpace : 0 }), body(body), arg(arg), stackBase(stackBase), userMode(userMode), finished(false), blocked(false), semRequest(0), semResult(0), timeSlice(DEFAULT_TIME_SLICE), sleepTime(0), next(nullptr){}
+_thread::_thread(Body body, void* arg, void* stackBase, void* stackSpace, bool userMode) : context({body ? (uint64)&threadWrapper : 0, body ? (uint64)stackSpace : 0 }), body(body), arg(arg), stackBase(stackBase), userMode(userMode), finished(false), blocked(false), semRequest(0), semResult(0), timeSlice(DEFAULT_TIME_SLICE), sleepTime(0), next(nullptr), message(nullptr), empty(1), full(0) {}
 
 
 _thread* _thread::createThread(Body body, void *arg, void *stackBase, void *stackSpace, bool userMode){
@@ -61,6 +61,8 @@ void _thread::dispatch(){
 
 void _thread::exit(){
     running->finished = true;
+    running->empty.releaseAll();
+    running->full.releaseAll();
     zombie = running;
     dispatch();
 }
@@ -138,4 +140,27 @@ _thread* ThreadQueue::get(){
         tail = nullptr;
     t->next = nullptr;
     return t;
+}
+
+
+
+void _thread::send(thread_t handle, char* message){
+    if(!handle)
+        return;
+    if(_sem::wait(&handle->empty, 1) != _sem::OK)
+        return;
+    handle->message = message;
+    _sem::signal(&handle->full, 1);
+
+}
+
+
+char* _thread::receive(){
+    _thread* self = running;
+    _sem::wait(&self->full, 1);
+    char* m = self->message;
+    self->message = nullptr;
+    _sem::signal(&self->empty, 1);
+
+    return m;
 }

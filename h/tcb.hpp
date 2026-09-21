@@ -3,6 +3,7 @@
 
 #include "../lib/hw.h"
 #include "syscall_c.hpp"
+#include "sem.hpp"
 
 class _thread {
 public:
@@ -11,6 +12,7 @@ public:
     struct Context {
         uint64 ra;
         uint64 sp;
+        uint64 s[3];
     };
 
     static _thread* createThread(Body body, void* arg,
@@ -18,6 +20,10 @@ public:
                                  bool userMode);
 
     static void dispatch();
+
+    static void send(thread_t handle, char* message);
+
+    static char* receive();
 
     static void exit();
 
@@ -69,26 +75,16 @@ private:
 
     static _thread* sleepHead;
 
+    char* message;
+    _sem empty;
+    _sem full;
+
     friend class ThreadQueue;
     friend class _sem;
 };
 
 using TCB = _thread;
 
-class ThreadQueue {
-public:
-    constexpr ThreadQueue(): head(nullptr), tail(nullptr) {}
-
-    void put(_thread* t);
-    _thread* get();
-
-    _thread* peek() const { return head; }
-    bool isEmpty() const { return head == nullptr; }
-
-private:
-    _thread* head;
-    _thread* tail;
-};
 
 extern "C" void contextSwitch(_thread::Context* oldContext,
                               _thread::Context* newContext);

@@ -3,7 +3,7 @@
 
 #include "../lib/hw.h"
 #include "syscall_c.hpp"
-#include "tcb.hpp"
+#include "ThreadQueue.hpp"
 
 class _sem {
 public:
@@ -28,6 +28,8 @@ public:
     static void operator delete(void* ptr) noexcept;
 
 private:
+    friend class _thread;
+
     explicit _sem(unsigned init);
 
     bool valid() const { return magic == MAGIC; }

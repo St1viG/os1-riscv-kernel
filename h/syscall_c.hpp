@@ -33,4 +33,8 @@ const int EOF = -1;
 char getc ();                                                           // 0x41
 void putc (char);                                                       // 0x42
 
+
+void send(thread_t handle, char* message);
+char* receive();
+
 #endif // _syscall_c

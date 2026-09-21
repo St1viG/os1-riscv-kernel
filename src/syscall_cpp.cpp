@@ -23,6 +23,16 @@ Thread::~Thread() {} // to implement
 void Thread::dispatch() { thread_dispatch();}
 int Thread::sleep(time_t t){ return time_sleep(t);}
 
+void Thread::send(char* message){
+    if(myHandle)
+        ::send(myHandle, message);
+}
+
+
+char* Thread::receive(){
+    return ::receive();
+}
+
 
 Semaphore::Semaphore(unsigned init): myHandle(nullptr){ sem_open(&myHandle, init);}
 Semaphore::~Semaphore() {if(myHandle) {sem_close(myHandle); myHandle = nullptr;}}

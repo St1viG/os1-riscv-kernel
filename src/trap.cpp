@@ -95,6 +95,12 @@ extern "C" void handleTrap(uint64 *frame){
             case 0x43:
                 _console::flush();
                 break;
+            case 0x14:
+                _thread::send((thread_t)frame[REG_A1], (char*)frame[REG_A2]);
+                break;
+            case 0x15:
+                frame[REG_A0] = (uint64)_thread::receive();
+                break;
             default:
                 frame[REG_A0] = (uint64) - 1;
                 break;
