@@ -4,6 +4,7 @@
 #define LEVEL_2_IMPLEMENTED 1
 #define LEVEL_3_IMPLEMENTED 1
 #define LEVEL_4_IMPLEMENTED 1
+#define MODIFICATION_IMPLEMENTED 1
 
 #if LEVEL_2_IMPLEMENTED == 1
 // TEST 1 (zadatak 2, niti C API i sinhrona promena konteksta)
@@ -12,6 +13,7 @@
 #include "../test/Threads_CPP_API_test.hpp"
 // TEST 7 (zadatak 2., testiranje da li se korisnicki kod izvrsava u korisnickom rezimu)
 #include "../test/System_Mode_test.hpp"
+#include "../test/Modification_test.hpp"
 #endif
 
 #if LEVEL_3_IMPLEMENTED == 1
@@ -31,7 +33,7 @@
 #endif
 
 void userMain() {
-    printString("Unesite broj testa? [1-7]\n");
+    printString("Unesite broj testa? [1-8]\n");
     int test = getc() - '0';
     getc(); // Enter posle broja
 
@@ -52,6 +54,13 @@ void userMain() {
     if (test >= 5 && test <= 6) {
         if (LEVEL_4_IMPLEMENTED == 0) {
             printString("Nije navedeno da je zadatak 4 implementiran\n");
+            return;
+        }
+    }
+
+    if(test == 8){
+        if(MODIFICATION_IMPLEMENTED == 0){
+            printString("Nije navedeno da je modifikacija implementirana\n");
             return;
         }
     }
@@ -100,6 +109,12 @@ void userMain() {
             printString("TEST 7 (zadatak 2., testiranje da li se korisnicki kod izvrsava u korisnickom rezimu)\n");
 #endif
             break;
+        case 8:
+#if MODIFICATION_IMPLEMENTED == 1
+            Messages_test();
+            printString("Modifikacija Test\n");
+            break;
+#endif
         default:
             printString("Niste uneli odgovarajuci broj za test\n");
     }
