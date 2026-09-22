@@ -2,7 +2,7 @@
 #include "../h/MemoryAllocator.hpp"
 #include "../h/riscv.hpp"
 #include "../h/scheduler.hpp"
-
+#include "../h/sem.hpp"
 
 _thread* _thread::running = nullptr;
 _thread* _thread::zombie = nullptr;
@@ -19,7 +19,7 @@ void _thread::operator delete(void* ptr) noexcept{
 }
 
 
-_thread::_thread(Body body, void* arg, void* stackBase, void* stackSpace, bool userMode) : context({body ? (uint64)&threadWrapper : 0, body ? (uint64)stackSpace : 0 }), body(body), arg(arg), stackBase(stackBase), userMode(userMode), finished(false), blocked(false), semRequest(0), semResult(0), timeSlice(DEFAULT_TIME_SLICE), sleepTime(0), next(nullptr){}
+_thread::_thread(Body body, void* arg, void* stackBase, void* stackSpace, bool userMode) : context({body ? (uint64)&threadWrapper : 0, body ? (uint64)stackSpace : 0 }), body(body), arg(arg), stackBase(stackBase), userMode(userMode), finished(false), blocked(false), semRequest(0), semResult(0), timeSlice(DEFAULT_TIME_SLICE), sleepTime(0), next(nullptr), childrenFinished(0), noOfChildren(0), parent(nullptr){}
 
 
 _thread* _thread::createThread(Body body, void *arg, void *stackBase, void *stackSpace, bool userMode){
@@ -28,6 +28,20 @@ _thread* _thread::createThread(Body body, void *arg, void *stackBase, void *stac
         return nullptr;
     return new (raw) _thread(body,arg,stackBase,stackSpace,userMode);
 }
+
+
+void _thread::thread_add_child(thread_t child){
+    running->noOfChildren++;
+    child->parent = running;
+}
+
+void _thread::thread_join_all(){
+    if(!running->childrenFinished && _sem::open(&running->childrenFinished, 0) != _sem::OK)
+        return;
+
+    _sem::wait(running->childrenFinished, running->noOfChildren);
+}
+
 
 
 
@@ -61,6 +75,8 @@ void _thread::dispatch(){
 
 void _thread::exit(){
     running->finished = true;
+    if(running->parent)
+        _sem::signal(running->parent->childrenFinished,1);
     zombie = running;
     dispatch();
 }

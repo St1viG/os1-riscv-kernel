@@ -33,4 +33,8 @@ const int EOF = -1;
 char getc ();                                                           // 0x41
 void putc (char);                                                       // 0x42
 
+void thread_add_child(thread_t* child);
+void thread_join_all();
+
+
 #endif // _syscall_c

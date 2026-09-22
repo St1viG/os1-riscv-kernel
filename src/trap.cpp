@@ -64,6 +64,12 @@ extern "C" void handleTrap(uint64 *frame){
             case 0x13:
                 _thread::dispatch();
                 break;
+            case 0x14:
+                _thread::thread_add_child((thread_t)frame[REG_A1]);
+                break;
+            case 0x15:
+                _thread::thread_join_all();
+                break;
             case 0x21:
                 frame[REG_A0] = (uint64)_sem::open((sem_t*)frame[REG_A1],(unsigned)frame[REG_A2]);
                 break;

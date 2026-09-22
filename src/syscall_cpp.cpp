@@ -43,3 +43,13 @@ void PeriodicThread::run() {
         if (period) Thread::sleep(period);
     }
 }
+
+
+ void Thread::addChild(Thread* child){
+    // this->parent = 
+    ::thread_add_child(&child->myHandle);
+ }
+
+ void Thread::joinAll(){
+    ::thread_join_all();
+ }
