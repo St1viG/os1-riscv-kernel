@@ -47,7 +47,7 @@ void PeriodicThread::run() {
 
  void Thread::addChild(Thread* child){
     // this->parent = 
-    ::thread_add_child(&child->myHandle);
+    ::thread_add_child(child->myHandle);
  }
 
  void Thread::joinAll(){

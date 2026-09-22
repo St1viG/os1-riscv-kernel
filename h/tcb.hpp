@@ -25,7 +25,7 @@ public:
 
     static int sleep(time_t ticks);
 
-    static void thread_add_child(thread_t* child);
+    static void thread_add_child(thread_t child);
 
     static void thread_join_all();
 
@@ -67,7 +67,7 @@ private:
     uint64 timeSlice;       // Phase 5: quantum remaining, in timer periods
     uint64 sleepTime;       // gap to the previous node in the sleep list
     _thread* next;
-    _thread* parent;
+   
 
     // Parked here by exit() and released by the next thread to be switched in.
     static _thread* zombie;
@@ -79,6 +79,8 @@ private:
 
     sem_t childrenFinished;
     uint64 noOfChildren;
+
+     _thread* parent;
 };
 
 using TCB = _thread;

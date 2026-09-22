@@ -40,15 +40,16 @@ public:
 };
 
 void testThreadA::testThreadBodyA(void* arg){
-    Thread* t[3];
-    for(int i = 0; i < 3; i++)
-        t[3] = new testThreadB();
+    Thread* t[4];                       // 3 x B + 1 x C
+    for(int i = 0; i < 3; i++){
+        t[i] = new testThreadB();
+        t[i]->start();                  // start first: addChild needs myHandle
+        addChild(t[i]);
+    }
 
-    for(int i = 0; i < 3; i++)
-        t[3]->start();
-
-    for(int i = 0; i < 3; i++)
-        addChild(t[3]);
+    t[3] = new testThreadC();
+    t[3]->start();
+    addChild(t[3]);
 
     joinAll();
 
@@ -59,14 +60,11 @@ void testThreadA::testThreadBodyA(void* arg){
 
 void testThreadB::testThreadBodyB(void* arg){
     Thread* t[3];
-    for(int i = 0; i < 3; i++)
-        t[3] = new testThreadC();
-
-    for(int i = 0; i < 3; i++)
-        t[3]->start();
-
-    for(int i = 0; i < 3; i++)
-        addChild(t[3]);
+    for(int i = 0; i < 3; i++){
+        t[i] = new testThreadC();
+        t[i]->start();
+        addChild(t[i]);
+    }
 
     joinAll();
 

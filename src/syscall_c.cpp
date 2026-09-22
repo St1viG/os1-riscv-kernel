@@ -66,5 +66,5 @@ char getc()                                 { return (char)syscall1(0x41); }
 void putc(char c)                           { syscall2(0x42, (uint64)c); }
 
 
-void thread_add_child(thread_t* child) { syscall2( 0x14, (uint64)child); };
+void thread_add_child(thread_t child) { syscall2( 0x14, (uint64)child); };
 void thread_join_all() { syscall1(0x15); };

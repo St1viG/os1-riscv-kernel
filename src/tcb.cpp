@@ -30,16 +30,27 @@ _thread* _thread::createThread(Body body, void *arg, void *stackBase, void *stac
 }
 
 
+// The semaphore is opened here, not in join_all: a child that finishes before
+// its parent gets to join_all would otherwise signal a null handle and its unit
+// would be lost, leaving the parent waiting for a count it can never reach.
 void _thread::thread_add_child(thread_t child){
-    running->noOfChildren++;
-    child->parent = running;
-}
+    if(!child)
+        return;
 
-void _thread::thread_join_all(){
     if(!running->childrenFinished && _sem::open(&running->childrenFinished, 0) != _sem::OK)
         return;
 
-    _sem::wait(running->childrenFinished, running->noOfChildren);
+    child->parent = running;
+    running->noOfChildren++;
+}
+
+void _thread::thread_join_all(){
+    if(!running->childrenFinished || running->noOfChildren == 0)
+        return;
+
+    unsigned n = (unsigned)running->noOfChildren;
+    running->noOfChildren = 0;      // so a second join_all does not re-wait
+    _sem::wait(running->childrenFinished, n);
 }
 
 
@@ -75,7 +86,7 @@ void _thread::dispatch(){
 
 void _thread::exit(){
     running->finished = true;
-    if(running->parent)
+    if(running->parent && running->parent->childrenFinished)
         _sem::signal(running->parent->childrenFinished,1);
     zombie = running;
     dispatch();
