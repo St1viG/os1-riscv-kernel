@@ -307,7 +307,7 @@ sequenceDiagram
     W->>W: a0 = 0x23, a1 = s
     W->>V: ecall — hardware sets SPP=1, SIE=0, sepc, scause=8
     V->>V: push 272-byte frame onto this thread's own stack
-    V->>H: mv a0, sp; call handleTrap
+    V->>H: mv a0, sp — the frame is the argument — then call handleTrap
     H->>H: frame[FRAME_SEPC] += 4 (step over the ecall)
     H->>S: switch (frame[REG_A0]) → case 0x23
     alt units available and no one queued
@@ -418,8 +418,8 @@ payload.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Ready: thread_create, then Scheduler::put
-    Ready --> Running: Scheduler::get, then contextSwitch
+    [*] --> Ready: thread_create, then queued by the scheduler
+    Ready --> Running: picked by the scheduler, then contextSwitch
     Running --> Ready: thread_dispatch, or the quantum runs out in tick
     Running --> Blocked: sem_wait with too few units
     Blocked --> Ready: sem_signal releases it, or sem_close wakes it with ERR_CLOSED
